@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trove — Growth Phase Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--midnight:#0C1029;--abyss:#050408;--slate:#8B90AA;--blanc:#FFFFFC;--surface:#111530;--surface2:#161b3a;--border:rgba(139,144,170,0.13);--border-med:rgba(139,144,170,0.25);--text:#FFFFFC;--muted:#8B90AA;--dim:rgba(139,144,170,0.45);--green:#4ade80;--red:#f87171;--amber:#fbbf24;--blue:#60a5fa;--purple:#c4b5fd;--radius:9px;--radius-lg:12px;--sw:230px;--font:'Inter',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--midnight);color:var(--text);min-height:100vh;display:flex;font-size:13px;line-height:1.5;}
+.sidebar{width:var(--sw);min-height:100vh;background:var(--abyss);border-right:1px solid var(--border);position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:100;overflow-y:auto;}
+.sidebar::-webkit-scrollbar{width:3px;}.sidebar::-webkit-scrollbar-thumb{background:rgba(139,144,170,0.12);}
+.s-logo{padding:22px 20px 16px;border-bottom:1px solid var(--border);}
+.s-wordmark{font-size:20px;font-weight:300;letter-spacing:-0.04em;color:var(--blanc);}
+.s-sub{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+.s-section{padding:14px 12px 2px;}
+.s-label{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:0 10px;margin-bottom:4px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;color:var(--muted);font-size:12.5px;font-weight:400;transition:all 0.12s;border:none;background:none;width:100%;text-align:left;font-family:var(--font);}
+.nav-item:hover{background:rgba(139,144,170,0.07);color:var(--text);}
+.nav-item.active{background:rgba(255,255,252,0.07);color:var(--blanc);font-weight:500;}
+.nav-dot{width:5px;height:5px;border-radius:50%;background:rgba(139,144,170,0.35);flex-shrink:0;}
+.nav-item.active .nav-dot{background:var(--blanc);}
+.phase-indicator{font-size:9px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:8px;flex-shrink:0;}
+.pi-0{background:rgba(139,144,170,0.15);color:var(--muted);}
+.pi-1{background:rgba(96,165,250,0.15);color:var(--blue);}
+.pi-2{background:rgba(251,191,36,0.15);color:var(--amber);}
+.pi-3{background:rgba(74,222,128,0.15);color:var(--green);}
+.s-footer{margin-top:auto;padding:14px;border-top:1px solid var(--border);}
+.main{margin-left:var(--sw);flex:1;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{height:54px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--midnight);position:sticky;top:0;z-index:50;}
+.tb-title{font-size:13px;font-weight:500;color:var(--text);}
+.tb-meta{font-size:11px;color:var(--dim);}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border-med);background:transparent;color:var(--muted);transition:all 0.12s;font-family:var(--font);}
+.btn:hover{background:rgba(139,144,170,0.09);color:var(--text);}
+.btn-p{background:var(--blanc);color:var(--midnight);border-color:var(--blanc);}
+.btn-p:hover{opacity:0.92;}
+.content{flex:1;padding:24px 28px;}
+.section{display:none;}.section.active{display:block;}
+/* LAYOUT */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.four-col{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.sidebar-layout{display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start;}
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:14px;}
+.card:last-child{margin-bottom:0;}
+.ch{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ct{font-size:12.5px;font-weight:600;color:var(--text);letter-spacing:-0.01em;}
+.cb{padding:16px;}
+/* STATS */
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:15px;}
+.slabel{font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;}
+.sval{font-size:22px;font-weight:700;letter-spacing:-0.03em;color:var(--blanc);line-height:1;}
+.ssub{font-size:11px;color:var(--muted);margin-top:4px;}
+.sg{color:var(--green);}.sr{color:var(--red);}.sa{color:var(--amber);}
+/* ALERTS */
+.alert{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;border-radius:8px;margin-bottom:8px;font-size:12px;}
+.adot{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.ag{background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.18);color:var(--green);}.ag .adot{background:var(--green);}
+.aa{background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.18);color:var(--amber);}.aa .adot{background:var(--amber);}
+.ar{background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.18);color:var(--red);}.ar .adot{background:var(--red);}
+.ab{background:rgba(96,165,250,0.07);border:1px solid rgba(96,165,250,0.18);color:var(--blue);}.ab .adot{background:var(--blue);}
+.at{font-weight:600;color:var(--text);margin-bottom:1px;}.ab2{color:var(--muted);line-height:1.5;}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;}
+.bg{background:rgba(74,222,128,0.12);color:var(--green);}.br{background:rgba(248,113,113,0.12);color:var(--red);}
+.ba{background:rgba(251,191,36,0.12);color:var(--amber);}.bb{background:rgba(96,165,250,0.12);color:var(--blue);}
+.bs{background:rgba(139,144,170,0.1);color:var(--muted);}.bp{background:rgba(196,181,253,0.12);color:var(--purple);}
+/* SLIDERS */
+.sl-row{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+.sl-lbl{font-size:12px;color:var(--muted);flex:1;}
+.sl-val{font-size:12px;font-weight:600;color:var(--blanc);width:70px;text-align:right;flex-shrink:0;}
+input[type=range]{width:110px;height:3px;-webkit-appearance:none;appearance:none;background:rgba(139,144,170,0.18);border-radius:2px;outline:none;cursor:pointer;flex-shrink:0;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--blanc);cursor:pointer;border:2px solid var(--midnight);}
+/* NUM INPUT */
+.num-inp{background:var(--surface2);border:1px solid rgba(139,144,170,0.2);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color 0.12s;width:100%;}
+.num-inp:focus{border-color:rgba(255,255,252,0.25);}
+.num-inp.sm{width:80px;text-align:right;}
+/* TABLES */
+.dt{width:100%;border-collapse:collapse;font-size:12px;}
+.dt th{text-align:left;font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--border);}
+.dt td{padding:8px 10px;border-bottom:1px solid rgba(139,144,170,0.06);color:var(--muted);vertical-align:middle;}
+.dt tr:last-child td{border-bottom:none;}
+.dt tr:hover td{background:rgba(255,255,252,0.018);}
+.dt td.pri{color:var(--text);font-weight:500;}
+.dt td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.dt td.pos{color:var(--green);text-align:right;}
+.dt td.neg{color:var(--red);text-align:right;}
+.dt td.wrn{color:var(--amber);text-align:right;}
+/* KV */
+.kv{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(139,144,170,0.06);}
+.kv:last-child{border-bottom:none;}
+.kk{font-size:12px;color:var(--muted);}
+.kv2{font-size:12px;font-weight:600;color:var(--text);}
+/* DIVIDER */
+.div{height:1px;background:var(--border);margin:12px 0;}
+/* SEC HEADER */
+.sec-ey{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.sec-ti{font-size:19px;font-weight:700;letter-spacing:-0.03em;color:var(--blanc);margin-bottom:18px;}
+/* MONTH TABLE */
+.mt-wrap{overflow-x:auto;}
+.mt{width:100%;border-collapse:collapse;font-size:11.5px;min-width:650px;}
+.mt th{text-align:left;font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--dim);padding:7px 9px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.mt td{padding:7px 9px;border-bottom:1px solid rgba(139,144,170,0.05);color:var(--muted);white-space:nowrap;}
+.mt tr:last-child td{border-bottom:none;}
+.mt td.pri{color:var(--text);font-weight:500;}
+.mt td.pos{color:var(--green);text-align:right;}
+.mt td.neg{color:var(--red);text-align:right;}
+.mt td.wrn{color:var(--amber);text-align:right;}
+.mt td.num{text-align:right;}
+.mt tr.coll-row td{background:rgba(96,165,250,0.05);}
+.mt tr.prod-row td{background:rgba(251,191,36,0.05);}
+/* COLLECTION ITEMS */
+.coll-item{background:var(--surface2);border:1px solid var(--border-med);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.coll-item:last-child{margin-bottom:0;}
+.coll-label{font-size:12px;font-weight:500;color:var(--text);min-width:90px;}
+/* DEPT ROW */
+.dept-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(139,144,170,0.06);}
+.dept-row:last-child{border-bottom:none;}
+.dept-lbl{font-size:12px;color:var(--muted);width:160px;flex-shrink:0;}
+.dept-val{font-size:12px;font-weight:600;color:var(--text);text-align:right;width:80px;flex-shrink:0;}
+/* CHART */
+.chart-wrap{position:relative;width:100%;}
+/* RUNWAY BAR */
+.rw-track{height:6px;background:rgba(139,144,170,0.1);border-radius:3px;margin:10px 0;}
+.rw-fill{height:100%;border-radius:3px;transition:width 0.3s;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:rgba(139,144,170,0.15);border-radius:2px;}
+/* HIRING TABLE */
+.hp{display:inline-flex;align-items:center;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:500;}
+.hp-p0{background:rgba(139,144,170,0.1);color:var(--muted);}
+.hp-p1{background:rgba(96,165,250,0.12);color:var(--blue);}
+.hp-p2{background:rgba(251,191,36,0.12);color:var(--amber);}
+.hp-p3{background:rgba(74,222,128,0.12);color:var(--green);}
+.type-emp{background:rgba(255,255,252,0.06);color:rgba(255,255,252,0.7);}
+.type-out{background:rgba(251,191,36,0.1);color:var(--amber);}
+.type-free{background:rgba(96,165,250,0.1);color:var(--blue);}
+/* TOGGLE */
+.tog{display:flex;gap:3px;background:var(--surface2);padding:3px;border-radius:7px;}
+.tog-btn{padding:5px 12px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:500;text-align:center;color:var(--muted);border:none;background:none;font-family:var(--font);transition:all 0.12s;}
+.tog-btn.on{background:rgba(255,255,252,0.07);color:var(--blanc);}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="s-logo">
+    <div class="s-wordmark">trove</div>
+    <div class="s-sub">Growth Phase Planner</div>
+  </div>
+  <div class="s-section">
+    <div class="s-label">Phase Planners</div>
+    <button class="nav-item active" onclick="nav('p0',this)"><div class="nav-dot"></div><span style="flex:1;">Bootstrap</span><span class="phase-indicator pi-0">P0</span></button>
+    <button class="nav-item" onclick="nav('p1',this)"><div class="nav-dot"></div><span style="flex:1;">UK Only</span><span class="phase-indicator pi-1">P1</span></button>
+    <button class="nav-item" onclick="nav('p2',this)"><div class="nav-dot"></div><span style="flex:1;">UK + Europe</span><span class="phase-indicator pi-2">P2</span></button>
+    <button class="nav-item" onclick="nav('p3',this)"><div class="nav-dot"></div><span style="flex:1;">UK + EU + US</span><span class="phase-indicator pi-3">P3</span></button>
+  </div>
+  <div class="s-section">
+    <div class="s-label">Finance</div>
+    <button class="nav-item" onclick="nav('funding',this)"><div class="nav-dot"></div>Funding Calculator</button>
+    <button class="nav-item" onclick="nav('hiring',this)"><div class="nav-dot"></div>Hiring & Headcount</button>
+  </div>
+  <div class="s-footer">
+    <div style="font-size:11px;color:var(--dim);line-height:1.5;">Changes to this planner update all phase models in real time.</div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="tb-title" id="page-title">P0 — Bootstrap Planner</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="badge ba" id="unsaved" style="display:none;">● Unsaved changes</span>
+      <button class="btn btn-p" onclick="recalcAll()">Recalculate all</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ════════════════ P0: BOOTSTRAP ════════════════ -->
+    <div class="section active" id="sec-p0">
+      <div class="sec-ey">Phase 0</div>
+      <div class="sec-ti">Bootstrap Planner</div>
+
+      <div class="sidebar-layout">
+        <!-- LEFT: inputs -->
+        <div>
+          <!-- Starting position -->
+          <div class="card">
+            <div class="ch"><div class="ct">Starting position</div><span class="badge ba">Founders on £0</span></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Cash in bank (£)</div><input type="range" min="0" max="500000" step="5000" value="0" id="p0-cash" oninput="p0Recalc()"><div class="sl-val" id="p0v-cash">£0</div></div>
+              <div class="sl-row"><div class="sl-lbl">Launch month</div>
+                <div class="tog" style="flex-shrink:0;" id="p0-launch-tog">
+                  <button class="tog-btn on" onclick="setP0Launch(3,this)">M3</button>
+                  <button class="tog-btn" onclick="setP0Launch(4,this)">M4</button>
+                  <button class="tog-btn" onclick="setP0Launch(5,this)">M5</button>
+                  <button class="tog-btn" onclick="setP0Launch(6,this)">M6</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly opex by dept -->
+          <div class="card">
+            <div class="ch"><div class="ct">Monthly business operating costs</div></div>
+            <div class="cb" id="p0-opex-form"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: collection + revenue + summary -->
+        <div>
+          <!-- Collection cost planner -->
+          <div class="card">
+            <div class="ch"><div class="ct">Collection cost planner</div><button class="btn" onclick="addCollection('p0')" style="font-size:11px;padding:4px 10px;">+ Add collection</button></div>
+            <div class="cb">
+              <div id="p0-collections"></div>
+              <div style="margin-top:12px;" id="p0-coll-note"></div>
+            </div>
+          </div>
+
+          <!-- Revenue -->
+          <div class="card">
+            <div class="ch"><div class="ct">Revenue calculator</div></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Orders/month at launch</div><input type="range" min="10" max="500" step="5" value="50" id="p0-orders" oninput="p0Recalc()"><div class="sl-val" id="p0v-orders">50</div></div>
+              <div class="sl-row"><div class="sl-lbl">Monthly order growth (%)</div><input type="range" min="0" max="30" step="1" value="10" id="p0-growth" oninput="p0Recalc()"><div class="sl-val" id="p0v-growth">10%</div></div>
+              <div class="sl-row"><div class="sl-lbl">Collection launch boost</div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0;"><button id="p0-boost-btn" onclick="toggleBoost('p0')" style="background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all 0.12s;">+20% ON</button></div><div class="sl-val" id="p0v-boost" style="color:#4ade80;">+20%</div></div>
+              <div class="sl-row"><div class="sl-lbl">AOV (£)</div><input type="range" min="200" max="800" step="25" value="450" id="p0-aov" oninput="p0Recalc()"><div class="sl-val" id="p0v-aov">£450</div></div>
+              <div class="sl-row"><div class="sl-lbl">Commission (%)</div><input type="range" min="30" max="50" step="1" value="30" id="p0-comm" oninput="p0Recalc()"><div class="sl-val" id="p0v-comm">30%</div></div>
+              <div class="div"></div>
+              <div class="kv"><div class="kk">Shipping</div><div class="kv2">£10 / order</div></div>
+              <div class="kv"><div class="kk">Returns</div><div class="kv2">6% @ £7/return</div></div>
+              <div class="kv"><div class="kk">Net revenue / order</div><div class="kv2 sg" id="p0-nrpo">—</div></div>
+            </div>
+          </div>
+
+          <!-- Summary stats -->
+          <div class="four-col" style="margin-bottom:14px;">
+            <div class="stat"><div class="slabel">Total to launch</div><div class="sval sr" id="p0-st-pre">—</div></div>
+            <div class="stat"><div class="slabel">Monthly burn</div><div class="sval sa" id="p0-st-burn">—</div></div>
+            <div class="stat"><div class="slabel">Break-even orders</div><div class="sval" id="p0-st-be">—</div></div>
+            <div class="stat"><div class="slabel">Min. raise needed</div><div class="sval sa" id="p0-st-raise">—</div></div>
+          </div>
+
+          <!-- Cash chart -->
+          <div class="card">
+            <div class="ch"><div class="ct">12-month cash position</div><span class="badge bs">P0</span></div>
+            <div class="cb"><div class="chart-wrap" style="height:190px;"><canvas id="p0-chart" role="img" aria-label="P0 monthly cash position"></canvas></div></div>
+          </div>
+
+          <!-- Month table -->
+          <div class="card">
+            <div class="ch"><div class="ct">Month-by-month model</div></div>
+            <div class="mt-wrap"><table class="mt"><thead><tr><th>Month</th><th>Stage</th><th>Collections</th><th class="num">Costs out</th><th class="num">Revenue in</th><th class="num">Net</th><th class="num">Cash balance</th></tr></thead><tbody id="p0-tbody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ P1: UK ONLY ════════════════ -->
+    <div class="section" id="sec-p1">
+      <div class="sec-ey">Phase 1</div>
+      <div class="sec-ti">UK Only Planner</div>
+      <div class="sidebar-layout">
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">Starting position</div></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Opening cash (£)</div><input type="range" min="0" max="2000000" step="25000" value="500000" id="p1-cash" oninput="p1Recalc()"><div class="sl-val" id="p1v-cash">£500K</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Monthly operating costs</div></div>
+            <div class="cb" id="p1-opex-form"></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Headcount costs</div><a onclick="nav('hiring',document.querySelector('[onclick*=hiring]'))" style="font-size:11px;color:var(--blue);cursor:pointer;">Edit in Hiring →</a></div>
+            <div class="cb" id="p1-hc-summary"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">Collection cost planner</div><button class="btn" onclick="addCollection('p1')" style="font-size:11px;padding:4px 10px;">+ Add collection</button></div>
+            <div class="cb"><div id="p1-collections"></div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Revenue calculator</div><span class="badge bb">UK fulfilment</span></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Orders/month at launch</div><input type="range" min="50" max="1000" step="25" value="200" id="p1-orders" oninput="p1Recalc()"><div class="sl-val" id="p1v-orders">200</div></div>
+              <div class="sl-row"><div class="sl-lbl">Monthly order growth (%)</div><input type="range" min="0" max="30" step="1" value="10" id="p1-growth" oninput="p1Recalc()"><div class="sl-val" id="p1v-growth">10%</div></div>
+              <div class="sl-row"><div class="sl-lbl">Collection launch boost</div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0;"><button id="p1-boost-btn" onclick="toggleBoost('p1')" style="background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all 0.12s;">+20% ON</button></div><div class="sl-val" id="p1v-boost" style="color:#4ade80;">+20%</div></div>
+              <div class="sl-row"><div class="sl-lbl">AOV (£)</div><input type="range" min="200" max="800" step="25" value="450" id="p1-aov" oninput="p1Recalc()"><div class="sl-val" id="p1v-aov">£450</div></div>
+              <div class="sl-row"><div class="sl-lbl">Commission (%)</div><input type="range" min="30" max="50" step="1" value="30" id="p1-comm" oninput="p1Recalc()"><div class="sl-val" id="p1v-comm">30%</div></div>
+              <div class="div"></div>
+              <div class="kv"><div class="kk">Shipping</div><div class="kv2">£10 / order</div></div>
+              <div class="kv"><div class="kk">Returns</div><div class="kv2">6% @ £7/return</div></div>
+              <div class="kv"><div class="kk">Net revenue / order</div><div class="kv2 sg" id="p1-nrpo">—</div></div>
+            </div>
+          </div>
+          <div class="four-col" style="margin-bottom:14px;">
+            <div class="stat"><div class="slabel">Monthly opex</div><div class="sval sr" id="p1-st-opex">—</div></div>
+            <div class="stat"><div class="slabel">Monthly headcount</div><div class="sval sr" id="p1-st-hc">—</div></div>
+            <div class="stat"><div class="slabel">Break-even orders</div><div class="sval" id="p1-st-be">—</div></div>
+            <div class="stat"><div class="slabel">Runway</div><div class="sval" id="p1-st-runway">—</div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">12-month cash position</div><span class="badge bb">P1</span></div>
+            <div class="cb"><div class="chart-wrap" style="height:190px;"><canvas id="p1-chart"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Month-by-month model</div></div>
+            <div class="mt-wrap"><table class="mt"><thead><tr><th>Month</th><th>Collections</th><th class="num">Opex</th><th class="num">Headcount</th><th class="num">Revenue</th><th class="num">Net</th><th class="num">Balance</th></tr></thead><tbody id="p1-tbody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ P2: UK + EUROPE ════════════════ -->
+    <div class="section" id="sec-p2">
+      <div class="sec-ey">Phase 2</div>
+      <div class="sec-ti">UK + Europe Planner</div>
+      <div class="sidebar-layout">
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">Starting position</div></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Opening cash (£)</div><input type="range" min="0" max="5000000" step="50000" value="1500000" id="p2-cash" oninput="p2Recalc()"><div class="sl-val" id="p2v-cash">£1.5M</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Monthly operating costs</div></div>
+            <div class="cb" id="p2-opex-form"></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Headcount costs</div><a onclick="nav('hiring',document.querySelector('[onclick*=hiring]'))" style="font-size:11px;color:var(--blue);cursor:pointer;">Edit in Hiring →</a></div>
+            <div class="cb" id="p2-hc-summary"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">Collection cost planner</div><button class="btn" onclick="addCollection('p2')" style="font-size:11px;padding:4px 10px;">+ Add collection</button></div>
+            <div class="cb"><div id="p2-collections"></div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Revenue calculator</div><span class="badge ba">EU fulfilment economics</span></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Orders/month at launch</div><input type="range" min="200" max="3000" step="50" value="800" id="p2-orders" oninput="p2Recalc()"><div class="sl-val" id="p2v-orders">800</div></div>
+              <div class="sl-row"><div class="sl-lbl">Monthly order growth (%)</div><input type="range" min="0" max="30" step="1" value="10" id="p2-growth" oninput="p2Recalc()"><div class="sl-val" id="p2v-growth">10%</div></div>
+              <div class="sl-row"><div class="sl-lbl">Collection launch boost</div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0;"><button id="p2-boost-btn" onclick="toggleBoost('p2')" style="background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all 0.12s;">+20% ON</button></div><div class="sl-val" id="p2v-boost" style="color:#4ade80;">+20%</div></div>
+              <div class="sl-row"><div class="sl-lbl">AOV (£)</div><input type="range" min="200" max="800" step="25" value="450" id="p2-aov" oninput="p2Recalc()"><div class="sl-val" id="p2v-aov">£450</div></div>
+              <div class="sl-row"><div class="sl-lbl">Commission (%)</div><input type="range" min="30" max="50" step="1" value="30" id="p2-comm" oninput="p2Recalc()"><div class="sl-val" id="p2v-comm">30%</div></div>
+              <div class="sl-row"><div class="sl-lbl">Items in inventory (for storage)</div><input type="range" min="100" max="5000" step="50" value="500" id="p2-inv" oninput="p2Recalc()"><div class="sl-val" id="p2v-inv">500</div></div>
+              <div class="div"></div>
+              <div style="font-size:11px;color:var(--dim);margin-bottom:8px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;">EU fulfilment costs per order</div>
+              <div class="kv"><div class="kk">Shipping</div><div class="kv2">£13.00</div></div>
+              <div class="kv"><div class="kk">Receiving</div><div class="kv2">£1.25</div></div>
+              <div class="kv"><div class="kk">Packing</div><div class="kv2">£8.00</div></div>
+              <div class="kv"><div class="kk">Storage (per item/mo)</div><div class="kv2">£2.50</div></div>
+              <div class="kv"><div class="kk">Returns (6% @ £7)</div><div class="kv2 sa" id="p2-returns-po">—</div></div>
+              <div class="kv" style="border-top:1px solid var(--border-med);margin-top:6px;padding-top:8px;"><div class="kk" style="font-weight:600;color:var(--text);">Net revenue / order</div><div class="kv2 sg" id="p2-nrpo">—</div></div>
+            </div>
+          </div>
+          <div class="four-col" style="margin-bottom:14px;">
+            <div class="stat"><div class="slabel">Monthly opex</div><div class="sval sr" id="p2-st-opex">—</div></div>
+            <div class="stat"><div class="slabel">Monthly headcount</div><div class="sval sr" id="p2-st-hc">—</div></div>
+            <div class="stat"><div class="slabel">Break-even orders</div><div class="sval" id="p2-st-be">—</div></div>
+            <div class="stat"><div class="slabel">Runway</div><div class="sval" id="p2-st-runway">—</div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">12-month cash position</div><span class="badge ba">P2</span></div>
+            <div class="cb"><div class="chart-wrap" style="height:190px;"><canvas id="p2-chart"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Month-by-month model</div></div>
+            <div class="mt-wrap"><table class="mt"><thead><tr><th>Month</th><th>Collections</th><th class="num">Opex</th><th class="num">Headcount</th><th class="num">Revenue</th><th class="num">Net</th><th class="num">Balance</th></tr></thead><tbody id="p2-tbody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ P3: UK + EU + US ════════════════ -->
+    <div class="section" id="sec-p3">
+      <div class="sec-ey">Phase 3</div>
+      <div class="sec-ti">UK + Europe + US Planner</div>
+      <div class="sidebar-layout">
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">Starting position</div></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Opening cash (£)</div><input type="range" min="0" max="10000000" step="100000" value="3000000" id="p3-cash" oninput="p3Recalc()"><div class="sl-val" id="p3v-cash">£3M</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Monthly operating costs</div></div>
+            <div class="cb" id="p3-opex-form"></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Headcount costs</div><a onclick="nav('hiring',document.querySelector('[onclick*=hiring]'))" style="font-size:11px;color:var(--blue);cursor:pointer;">Edit in Hiring →</a></div>
+            <div class="cb" id="p3-hc-summary"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">Collection cost planner</div><button class="btn" onclick="addCollection('p3')" style="font-size:11px;padding:4px 10px;">+ Add collection</button></div>
+            <div class="cb"><div id="p3-collections"></div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Revenue calculator</div><span class="badge bg">Global fulfilment</span></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Orders/month at launch</div><input type="range" min="500" max="8000" step="100" value="2000" id="p3-orders" oninput="p3Recalc()"><div class="sl-val" id="p3v-orders">2,000</div></div>
+              <div class="sl-row"><div class="sl-lbl">Monthly order growth (%)</div><input type="range" min="0" max="30" step="1" value="10" id="p3-growth" oninput="p3Recalc()"><div class="sl-val" id="p3v-growth">10%</div></div>
+              <div class="sl-row"><div class="sl-lbl">Collection launch boost</div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0;"><button id="p3-boost-btn" onclick="toggleBoost('p3')" style="background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all 0.12s;">+20% ON</button></div><div class="sl-val" id="p3v-boost" style="color:#4ade80;">+20%</div></div>
+              <div class="sl-row"><div class="sl-lbl">AOV (£)</div><input type="range" min="200" max="1000" step="25" value="450" id="p3-aov" oninput="p3Recalc()"><div class="sl-val" id="p3v-aov">£450</div></div>
+              <div class="sl-row"><div class="sl-lbl">Commission (%)</div><input type="range" min="30" max="50" step="1" value="30" id="p3-comm" oninput="p3Recalc()"><div class="sl-val" id="p3v-comm">30%</div></div>
+              <div class="sl-row"><div class="sl-lbl">Items in inventory</div><input type="range" min="500" max="20000" step="500" value="2000" id="p3-inv" oninput="p3Recalc()"><div class="sl-val" id="p3v-inv">2,000</div></div>
+              <div class="div"></div>
+              <div class="kv"><div class="kk">Net revenue / order</div><div class="kv2 sg" id="p3-nrpo">—</div></div>
+            </div>
+          </div>
+          <div class="four-col" style="margin-bottom:14px;">
+            <div class="stat"><div class="slabel">Monthly opex</div><div class="sval sr" id="p3-st-opex">—</div></div>
+            <div class="stat"><div class="slabel">Monthly headcount</div><div class="sval sr" id="p3-st-hc">—</div></div>
+            <div class="stat"><div class="slabel">Break-even orders</div><div class="sval" id="p3-st-be">—</div></div>
+            <div class="stat"><div class="slabel">Runway</div><div class="sval" id="p3-st-runway">—</div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">12-month cash position</div><span class="badge bg">P3</span></div>
+            <div class="cb"><div class="chart-wrap" style="height:190px;"><canvas id="p3-chart"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Month-by-month model</div></div>
+            <div class="mt-wrap"><table class="mt"><thead><tr><th>Month</th><th>Collections</th><th class="num">Opex</th><th class="num">Headcount</th><th class="num">Revenue</th><th class="num">Net</th><th class="num">Balance</th></tr></thead><tbody id="p3-tbody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ FUNDING CALCULATOR ════════════════ -->
+    <div class="section" id="sec-funding">
+      <div class="sec-ey">Finance</div>
+      <div class="sec-ti">How Much to Raise</div>
+
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">Your current position</div></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Cash in bank now (£)</div><input type="range" min="0" max="2000000" step="10000" value="0" id="f-cash" oninput="fRecalc()"><div class="sl-val" id="fv-cash">£0</div></div>
+              <div class="sl-row"><div class="sl-lbl">Monthly burn rate (£)</div><input type="range" min="5000" max="300000" step="5000" value="27000" id="f-burn" oninput="fRecalc()"><div class="sl-val" id="fv-burn">£27K</div></div>
+              <div class="sl-row"><div class="sl-lbl">Monthly revenue (£)</div><input type="range" min="0" max="500000" step="5000" value="0" id="f-rev" oninput="fRecalc()"><div class="sl-val" id="fv-rev">£0</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Runway targets</div></div>
+            <div class="cb">
+              <div class="sl-row"><div class="sl-lbl">Target runway (months)</div><input type="range" min="6" max="36" step="1" value="18" id="f-runway" oninput="fRecalc()"><div class="sl-val" id="fv-runway">18 mo</div></div>
+              <div class="sl-row"><div class="sl-lbl">Buffer / contingency (%)</div><input type="range" min="0" max="50" step="5" value="20" id="f-buffer" oninput="fRecalc()"><div class="sl-val" id="fv-buffer">20%</div></div>
+              <div class="sl-row"><div class="sl-lbl">Growth in monthly burn (%/mo)</div><input type="range" min="0" max="20" step="1" value="5" id="f-burn-growth" oninput="fRecalc()"><div class="sl-val" id="fv-bg">5%/mo</div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="three-col" style="margin-bottom:14px;">
+            <div class="stat"><div class="slabel">Current runway</div><div class="sval" id="f-st-current">—</div><div class="ssub">with cash on hand</div></div>
+            <div class="stat"><div class="slabel">Raise to survive</div><div class="sval sr" id="f-st-min">—</div><div class="ssub">Minimum, no buffer</div></div>
+            <div class="stat"><div class="slabel">Raise to thrive</div><div class="sval sg" id="f-st-rec">—</div><div class="ssub">Target runway + buffer</div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Funding scenarios</div></div>
+            <div class="cb" id="f-scenarios"></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Burn breakdown</div></div>
+            <div class="cb"><div class="chart-wrap" style="height:180px;"><canvas id="f-chart"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ HIRING & HEADCOUNT ════════════════ -->
+    <div class="section" id="sec-hiring">
+      <div class="sec-ey">Finance</div>
+      <div class="sec-ti">Hiring & Headcount</div>
+
+      <div class="four-col" style="margin-bottom:14px;">
+        <div class="stat"><div class="slabel">P1 people cost</div><div class="sval" id="hc-p1-cost">—</div><div class="ssub" id="hc-p1-n">—</div></div>
+        <div class="stat"><div class="slabel">P2 people cost</div><div class="sval" id="hc-p2-cost">—</div><div class="ssub" id="hc-p2-n">—</div></div>
+        <div class="stat"><div class="slabel">P3 people cost</div><div class="sval" id="hc-p3-cost">—</div><div class="ssub" id="hc-p3-n">—</div></div>
+        <div class="stat"><div class="slabel">On-costs rate</div><div class="sval">17%</div><div class="ssub">Employer NI</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px;">
+        <div class="ch">
+          <div class="ct">Full headcount plan</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn" onclick="addHireRow()" style="font-size:11px;padding:4px 10px;">+ Add role</button>
+            <span class="badge bp">Click phase / type to cycle</span>
+            <span class="badge ba">Edit salary</span>
+            <span class="badge br">× delete</span>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="dt" id="hc-table">
+            <thead><tr><th style="width:26px;"></th><th>Role</th><th>Department</th><th>Phase</th><th>Type</th><th class="num">Annual cost</th><th class="num">On-costs</th><th class="num">Total</th><th style="width:26px;"></th></tr></thead>
+            <tbody id="hc-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="ch"><div class="ct">Cost by phase</div></div>
+          <div class="cb"><div class="chart-wrap" style="height:170px;"><canvas id="hc-chart"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Summary by department</div></div>
+          <div class="cb" id="hc-dept-summary"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+Chart.defaults.color='#8B90AA';Chart.defaults.borderColor='rgba(139,144,170,0.1)';Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.font.size=11;
+const PAGE_TITLES={p0:'P0 — Bootstrap Planner',p1:'P1 — UK Only',p2:'P2 — UK + Europe',p3:'P3 — UK + Europe + US',funding:'Funding Calculator',hiring:'Hiring & Headcount'};
+function nav(id,btn){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('sec-'+id).classList.add('active');document.getElementById('page-title').textContent=PAGE_TITLES[id];if(btn)btn.classList.add('active');if(id==='hiring')renderHiring();}
+function fmtM(n,forceSign=false){const s=forceSign&&n>0?'+':'';if(Math.abs(n)>=1e6)return s+'£'+(n/1e6).toFixed(1)+'M';if(Math.abs(n)>=1000)return s+'£'+Math.round(n/1000)+'K';return s+'£'+Math.round(n).toLocaleString();}
+function fmtF(n){return '£'+Math.round(Math.abs(n)).toLocaleString();}
+function flagUnsaved(){document.getElementById('unsaved').style.display='inline-flex';}
+
+// ═══ OPEX DEPARTMENTS ═══
+const DEPTS=['Curation','Designer Relationships','Tech & Product','Operations','Marketing','Legal','Miscellaneous'];
+const OPEX_DEFAULTS={
+  p0:[500,500,8000,1000,2000,1500,1000],
+  p1:[2000,3000,10000,3000,8000,2000,2000],
+  p2:[5000,8000,15000,8000,15000,3000,3000],
+  p3:[12000,18000,25000,18000,30000,5000,5000]
+};
+let liveOpex={
+  p0:[...OPEX_DEFAULTS.p0],
+  p1:[...OPEX_DEFAULTS.p1],
+  p2:[...OPEX_DEFAULTS.p2],
+  p3:[...OPEX_DEFAULTS.p3]
+};
+
+const DEPT_COLORS={'Curation':'#c4b5fd','Designer Relationships':'#fbbf24','Tech & Product':'#6ee7b7','Operations':'#60a5fa','Marketing':'#f9a8d4','Legal':'#94a3b8','Miscellaneous':'#64748b'};
+
+function buildOpexForm(phase){
+  const rows=DEPTS.map((d,i)=>{
+    const col=DEPT_COLORS[d]||'#8B90AA';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(139,144,170,0.06);">
+      <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block;"></span>
+      <span style="font-size:12px;color:var(--muted);flex:1;">${d}</span>
+      <input type="number" style="width:90px;background:var(--surface2);border:1px solid rgba(139,144,170,0.2);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--font);font-size:12px;text-align:right;outline:none;"
+        value="${liveOpex[phase][i]}" min="0" step="100"
+        onchange="liveOpex['${phase}'][${i}]=Math.max(0,parseInt(this.value)||0);renderOpexTotal('${phase}');window['${phase}Recalc']();flagUnsaved();">
+      <span style="font-size:11px;color:var(--dim);width:40px;text-align:right;">/mo</span>
+    </div>`;
+  }).join('');
+  return `<div>${rows}<div style="height:1px;background:var(--border);margin:10px 0;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12px;font-weight:600;color:var(--text);">Total monthly</span>
+      <span style="font-size:14px;font-weight:700;color:var(--red);" id="${phase}-opex-total">£${liveOpex[phase].reduce((s,v)=>s+v,0).toLocaleString()}</span>
+    </div></div>`;
+}
+
+function renderOpexTotal(phase){
+  const el=document.getElementById(phase+'-opex-total');
+  if(el)el.textContent='£'+liveOpex[phase].reduce((s,v)=>s+v,0).toLocaleString();
+}
+
+function getOpexTotal(phase){return liveOpex[phase].reduce((s,v)=>s+v,0);}
+
+// ═══ COLLECTIONS ═══
+let collections={p0:[],p1:[],p2:[],p3:[]};
+let collId=0;
+
+function addCollection(phase){
+  const id=collId++;
+  collections[phase].push({id,name:`Collection ${collections[phase].length+1}`,items:60,vids:2,cpv:200,launchMonth:4});
+  renderCollections(phase);
+  window[phase+'Recalc']();
+}
+function removeCollection(phase,id){
+  collections[phase]=collections[phase].filter(c=>c.id!==id);
+  renderCollections(phase);
+  window[phase+'Recalc']();
+}
+function updateColl(phase,id,field,val){
+  const c=collections[phase].find(c=>c.id===id);
+  if(c){c[field]=field==='name'?val:Math.max(0,parseFloat(val)||0);window[phase+'Recalc']();}
+}
+function renderCollections(phase){
+  const el=document.getElementById(phase+'-collections');
+  if(!el)return;
+  if(collections[phase].length===0){el.innerHTML=`<div style="font-size:12px;color:var(--dim);text-align:center;padding:12px 0;">No collections yet. Click + Add collection.</div>`;return;}
+  el.innerHTML=collections[phase].map(c=>{
+    const videos=Math.round(c.items*c.vids);
+    const prodCost=videos*c.cpv;
+    return `<div class="coll-item">
+      <div style="flex:1;min-width:0;">
+        <input type="text" class="num-inp" style="background:transparent;border:none;border-bottom:1px solid var(--border-med);border-radius:0;padding:2px 0;font-weight:500;font-size:12px;color:var(--text);margin-bottom:8px;width:100%;" value="${c.name}" onchange="updateColl('${phase}',${c.id},'name',this.value)">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+          <div><div style="font-size:10px;color:var(--dim);margin-bottom:3px;">Items</div><input type="number" class="num-inp" min="1" max="500" value="${c.items}" onchange="updateColl('${phase}',${c.id},'items',this.value);renderCollections('${phase}');" style="font-size:11px;padding:4px 6px;"></div>
+          <div><div style="font-size:10px;color:var(--dim);margin-bottom:3px;">Videos/item</div><input type="number" class="num-inp" min="1" max="20" step="0.5" value="${parseFloat(c.vids).toFixed(1)}" onchange="updateColl('${phase}',${c.id},'vids',this.value);renderCollections('${phase}');" style="font-size:11px;padding:4px 6px;"></div>
+          <div><div style="font-size:10px;color:var(--dim);margin-bottom:3px;">£/video</div><input type="number" class="num-inp" min="50" max="5000" step="50" value="${c.cpv}" onchange="updateColl('${phase}',${c.id},'cpv',this.value);renderCollections('${phase}');" style="font-size:11px;padding:4px 6px;"></div>
+          <div><div style="font-size:10px;color:var(--dim);margin-bottom:3px;">Launch month</div><input type="number" class="num-inp" min="1" max="12" value="${c.launchMonth}" onchange="updateColl('${phase}',${c.id},'launchMonth',Math.min(12,Math.max(1,parseInt(this.value)||1)));renderCollections('${phase}');" style="font-size:11px;padding:4px 6px;"></div>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;padding-left:8px;">
+        <div style="font-size:11px;color:var(--dim);">${videos} videos</div>
+        <div style="font-size:13px;font-weight:700;color:var(--red);">${fmtM(prodCost)}</div>
+        <div style="font-size:10px;color:var(--dim);">prod. cost</div>
+        <div style="font-size:10px;color:var(--amber);margin-top:4px;">M${Math.max(1,c.launchMonth-1)} production</div>
+        <div style="font-size:10px;color:var(--blue);">M${c.launchMonth} launch</div>
+        <button onclick="removeCollection('${phase}',${c.id})" style="margin-top:8px;background:none;border:none;color:rgba(248,113,113,0.5);font-size:16px;cursor:pointer;padding:0;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='rgba(248,113,113,0.5)'">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getCollectionCosts(phase){
+  // returns array of 12 monthly production costs + launch flags
+  const costs=new Array(12).fill(0);
+  const launches=new Array(12).fill(null);
+  collections[phase].forEach(c=>{
+    const lm=Math.min(12,Math.max(1,c.launchMonth));
+    const pm=lm-1;
+    const videos=Math.round(c.items*c.vids);
+    const prod=videos*c.cpv;
+    if(pm>=1)costs[pm-1]+=prod; else costs[0]+=prod;
+    launches[lm-1]=(launches[lm-1]||[]);
+    launches[lm-1].push(c.name);
+  });
+  return{costs,launches};
+}
+
+// ═══ NET REVENUE PER ORDER ═══
+function netRevP0P1(aov,comm){return aov*(comm/100)-10-(0.06*7);}
+function netRevP2(aov,comm,inv){
+  const gross=aov*(comm/100);
+  const fulfil=13+1.25+8+(0.06*7);
+  return gross-fulfil; // storage handled separately
+}
+function netRevP3(aov,comm){return aov*(comm/100)-15-(0.06*7);}
+
+// ═══ HIRING DATA ═══
+const ONCOST=0.17;
+const deptColors={'Curation':'#c4b5fd','Designer Relationships':'#fbbf24','Tech & Product':'#6ee7b7','Operations':'#60a5fa','Marketing':'#f9a8d4','Production':'#fb923c','Legal & Finance':'#94a3b8'};
+let hcRows=[
+  {id:0,role:'CEO — Eduardo Melchior',dept:'Curation',phase:'p1',salary:80000,active:true,type:'employee'},
+  {id:1,role:'Head of Brand — Emily',dept:'Marketing',phase:'p1',salary:80000,active:true,type:'employee'},
+  {id:2,role:'Head of Product — Matt',dept:'Tech & Product',phase:'p1',salary:80000,active:true,type:'employee'},
+  {id:3,role:'Head of Partnerships — Stefan',dept:'Designer Relationships',phase:'p1',salary:80000,active:true,type:'employee'},
+  {id:4,role:'Head of Ops & Finance — Florian',dept:'Operations',phase:'p1',salary:80000,active:true,type:'employee'},
+  {id:5,role:'Creative Producer',dept:'Production',phase:'p1',salary:32000,active:true,type:'employee'},
+  {id:6,role:'Video + Motion Director',dept:'Production',phase:'p1',salary:42000,active:true,type:'employee'},
+  {id:7,role:'Brand Producer',dept:'Production',phase:'p1',salary:28000,active:true,type:'employee'},
+  {id:8,role:'Senior Creative',dept:'Production',phase:'p1',salary:38000,active:true,type:'employee'},
+  {id:9,role:'Full Stack iOS Engineer',dept:'Tech & Product',phase:'p1',salary:65000,active:true,type:'employee'},
+  {id:10,role:'Product Designer',dept:'Tech & Product',phase:'p1',salary:40000,active:true,type:'employee'},
+  {id:11,role:'Outsourced Bookkeeper',dept:'Operations',phase:'p1',salary:10000,active:true,type:'outsourced'},
+  {id:12,role:'Brand Partnerships Manager',dept:'Designer Relationships',phase:'p2',salary:38000,active:true,type:'employee'},
+  {id:13,role:'Finance Manager',dept:'Operations',phase:'p2',salary:46000,active:true,type:'employee'},
+  {id:14,role:'Full Stack Android Engineer',dept:'Tech & Product',phase:'p2',salary:62000,active:true,type:'employee'},
+  {id:15,role:'Logistics Coordinator',dept:'Operations',phase:'p2',salary:31000,active:true,type:'employee'},
+  {id:16,role:'Customer Service ×2',dept:'Designer Relationships',phase:'p2',salary:50000,active:true,type:'employee'},
+  {id:17,role:'Marketing Manager',dept:'Marketing',phase:'p3',salary:45000,active:true,type:'employee'},
+  {id:18,role:'Analytics Lead',dept:'Operations',phase:'p3',salary:57000,active:true,type:'employee'},
+  {id:19,role:'Financial Controller',dept:'Legal & Finance',phase:'p3',salary:63000,active:true,type:'employee'},
+  {id:20,role:'AI / Recommendation Specialist',dept:'Tech & Product',phase:'p3',salary:75000,active:true,type:'employee'},
+];
+let hcNextId=21;
+
+function hcCostPerPhase(phase){
+  const phases={p1:['p1'],p2:['p1','p2'],p3:['p1','p2','p3']};
+  const incl=phases[phase]||['p1'];
+  return hcRows.filter(r=>r.active&&incl.includes(r.phase)).reduce((s,r)=>{
+    const oc=r.type==='employee'?Math.round(r.salary*ONCOST):0;
+    return s+r.salary+oc;
+  },0);
+}
+function hcMonthlyCost(phase){return Math.round(hcCostPerPhase(phase)/12);}
+
+// ═══ P0 RECALC ═══
+let p0LaunchM=3,p0Charts={};
+function setP0Launch(m,btn){p0LaunchM=m;document.querySelectorAll('#p0-launch-tog .tog-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');p0Recalc();}
+
+// ═══ LAUNCH BOOST STATE ═══
+const boostEnabled={p0:true,p1:true,p2:true,p3:true};
+
+function toggleBoost(ph){
+  boostEnabled[ph]=!boostEnabled[ph];
+  const on=boostEnabled[ph];
+  const btn=document.getElementById(ph+'-boost-btn');
+  const lbl=document.getElementById(ph+'v-boost');
+  if(btn){
+    btn.textContent=on?'+20% ON':'+20% OFF';
+    btn.style.background=on?'rgba(74,222,128,0.12)':'rgba(139,144,170,0.1)';
+    btn.style.color=on?'#4ade80':'#8B90AA';
+    btn.style.borderColor=on?'rgba(74,222,128,0.25)':'rgba(139,144,170,0.2)';
+  }
+  if(lbl){lbl.textContent=on?'+20%':'off';lbl.style.color=on?'#4ade80':'#8B90AA';}
+  window[ph+'Recalc']();
+}
+
+// ═══ SHARED MONTH-ROW BUILDER ═══
+// baseOrders: steady-state monthly orders (from slider) — NOT per-collection
+// monthlyGrowthPct: gentle MoM growth rate, default 10%
+// Revenue is zero before the first collection launches.
+// Each additional collection (beyond the first) adds 10% incremental lift to the base.
+// Launch months apply a one-off 20% uplift on that month's order volume only.
+function buildMonthRows(phase, cash, baseOrders, nrpo, opex, hcMo, storageMo, monthlyGrowthPct){
+  const launchBoost=boostEnabled[phase]?1.20:1.0;
+  const{costs:collCosts,launches}=getCollectionCosts(phase);
+  const growthRate=(monthlyGrowthPct==null?10:monthlyGrowthPct)/100;
+
+  const firstLaunch=collections[phase].length>0
+    ? Math.min(...collections[phase].map(c=>c.launchMonth))
+    : 999;
+
+  // monthsSinceLaunch tracks how many months of growth to apply
+  let monthsSinceLaunch=0;
+  let bal=cash;
+  const rows=[];
+
+  for(let m=1;m<=12;m++){
+    const collProd=collCosts[m-1]||0;
+    const launchNames=launches[m-1]||null;
+    const newCollsThisMonth=launchNames?launchNames.length:0;
+    const pre=m<firstLaunch;
+
+    let ordersM=0;
+    if(!pre){
+      // Grow from base using compound growth — only the slider drives growth
+      const growthMultiplier=Math.pow(1+growthRate, monthsSinceLaunch);
+      ordersM=Math.round(baseOrders*growthMultiplier);
+      // One-off launch boost applies only in months a collection goes live
+      if(newCollsThisMonth>0) ordersM=Math.round(ordersM*launchBoost);
+      monthsSinceLaunch++;
+    }
+
+    const revIn=Math.round(ordersM*nrpo);
+    const costsOut=opex+hcMo+storageMo+collProd;
+    const net=revIn-costsOut;
+    bal+=net;
+    rows.push({m,costsOut,revIn,net,bal,launchNames,collProd,opex,hcMo,storageMo,orders:ordersM,pre,boosted:newCollsThisMonth>0&&boostEnabled[phase]});
+  }
+  return rows;
+}
+
+function p0Recalc(){
+  const cash=+document.getElementById('p0-cash').value;
+  const orders=+document.getElementById('p0-orders').value;
+  const aov=+document.getElementById('p0-aov').value;
+  const comm=+document.getElementById('p0-comm').value;
+  document.getElementById('p0v-cash').textContent=fmtM(cash);
+  document.getElementById('p0v-orders').textContent=orders;
+  document.getElementById('p0v-aov').textContent='£'+aov;
+  document.getElementById('p0v-comm').textContent=comm+'%';
+  const growthEl0=document.getElementById('p0-growth');
+  const growth=growthEl0?+growthEl0.value:10;
+  document.getElementById('p0v-growth').textContent=growth+'%';
+  const nrpo=netRevP0P1(aov,comm);
+  document.getElementById('p0-nrpo').textContent=fmtM(nrpo);
+  const opex=getOpexTotal('p0');
+  document.getElementById('p0-opex-total').textContent=fmtM(opex);
+  const beOrders=opex>0?Math.ceil(opex/nrpo):0;
+  const firstLaunch=collections.p0.length>0?Math.min(...collections.p0.map(c=>c.launchMonth)):p0LaunchM;
+  const{costs:collCosts}=getCollectionCosts('p0');
+  const totalToLaunch=opex*firstLaunch+collCosts.slice(0,firstLaunch).reduce((s,v)=>s+v,0);
+  const rows=buildMonthRows('p0',cash,orders,nrpo,opex,0,0,growth);
+  const minBal=Math.min(...rows.map(r=>r.bal));
+  const minRaise=Math.max(0,Math.ceil((-minBal+10000-cash)/50000)*50000);
+  document.getElementById('p0-st-pre').textContent=fmtM(totalToLaunch);
+  document.getElementById('p0-st-burn').textContent=fmtM(opex);
+  document.getElementById('p0-st-be').textContent=beOrders+' orders';
+  document.getElementById('p0-st-raise').textContent=fmtM(Math.max(minRaise,0));
+  renderMonthTable('p0',rows,true);
+  renderCashChart('p0',rows,p0Charts);
+  let alertHtml='';
+  if(minBal<0)alertHtml+=`<div class="alert ar"><div class="adot"></div><div><div class="at">Cash goes negative</div><div class="ab2">Lowest balance ${fmtM(minBal)}. Minimum raise: ${fmtM(Math.max(minRaise,0))}.</div></div></div>`;
+  else if(minBal<20000)alertHtml+=`<div class="alert aa"><div class="adot"></div><div><div class="at">Cash runs very low</div><div class="ab2">Minimum balance: ${fmtM(minBal)}. Build in more runway.</div></div></div>`;
+  else alertHtml+=`<div class="alert ag"><div class="adot"></div><div><div class="at">Cash position stable</div><div class="ab2">Lowest balance: ${fmtM(minBal)}.</div></div></div>`;
+  const collNote=document.getElementById('p0-coll-note');
+  if(collNote)collNote.innerHTML=alertHtml;
+}
+
+// ═══ P1/P2/P3 RECALC (shared template) ═══
+let p1Charts={},p2Charts={},p3Charts={};
+
+function phaseRecalc(ph){
+  const cashEl=document.getElementById(ph+'-cash');
+  const ordersEl=document.getElementById(ph+'-orders');
+  const aovEl=document.getElementById(ph+'-aov');
+  const commEl=document.getElementById(ph+'-comm');
+  if(!cashEl)return;
+  const cash=+cashEl.value;
+  const orders=+ordersEl.value;
+  const aov=+aovEl.value;
+  const comm=+commEl.value;
+  document.getElementById(ph+'v-cash').textContent=fmtM(cash);
+  document.getElementById(ph+'v-orders').textContent=orders.toLocaleString();
+  document.getElementById(ph+'v-aov').textContent='£'+aov;
+  document.getElementById(ph+'v-comm').textContent=comm+'%';
+
+  let nrpo,storageMo=0;
+  if(ph==='p2'){
+    const inv=+document.getElementById('p2-inv').value;
+    document.getElementById('p2v-inv').textContent=inv.toLocaleString();
+    storageMo=inv*2.50;
+    nrpo=netRevP2(aov,comm,inv);
+    document.getElementById('p2-returns-po').textContent='£'+(0.06*7).toFixed(2);
+    document.getElementById('p2-nrpo').textContent=fmtM(nrpo);
+  } else if(ph==='p3'){
+    const inv=+document.getElementById('p3-inv').value;
+    document.getElementById('p3v-inv').textContent=inv.toLocaleString();
+    storageMo=inv*2.50;
+    nrpo=netRevP3(aov,comm);
+    document.getElementById('p3-nrpo').textContent=fmtM(nrpo);
+  } else {
+    nrpo=netRevP0P1(aov,comm);
+    document.getElementById('p1-nrpo').textContent=fmtM(nrpo);
+  }
+
+  const opex=getOpexTotal(ph);
+  document.getElementById(ph+'-opex-total').textContent=fmtM(opex);
+  document.getElementById(ph+'-st-opex').textContent=fmtM(opex);
+  const hcMo=hcMonthlyCost(ph);
+  if(document.getElementById(ph+'-st-hc'))document.getElementById(ph+'-st-hc').textContent=fmtM(hcMo);
+  const totalMonthly=opex+hcMo+storageMo;
+  const beOrders=totalMonthly>0?Math.ceil(totalMonthly/nrpo):0;
+  if(document.getElementById(ph+'-st-be'))document.getElementById(ph+'-st-be').textContent=beOrders+' orders';
+
+  const growthEl=document.getElementById(ph+'-growth');
+  const growth=growthEl?+growthEl.value:10;
+  const growthLblEl=document.getElementById(ph+'v-growth');
+  if(growthLblEl)growthLblEl.textContent=growth+'%';
+  const rows=buildMonthRows(ph,cash,orders,nrpo,opex,hcMo,storageMo,growth);
+  const runway=rows.filter(r=>r.bal>=0).length;
+  if(document.getElementById(ph+'-st-runway'))document.getElementById(ph+'-st-runway').textContent=runway+' mo';
+  renderMonthTable(ph,rows,false);
+  const charts={p1:p1Charts,p2:p2Charts,p3:p3Charts};
+  renderCashChart(ph,rows,charts[ph]||{});
+  if(document.getElementById(ph+'-hc-summary'))renderHCSummary(ph);
+}
+
+function p1Recalc(){phaseRecalc('p1');}
+function p2Recalc(){phaseRecalc('p2');}
+function p3Recalc(){phaseRecalc('p3');}
+
+function renderHCSummary(ph){
+  const el=document.getElementById(ph+'-hc-summary');
+  if(!el)return;
+  const phases={p1:['p1'],p2:['p1','p2'],p3:['p1','p2','p3']};
+  const incl=phases[ph]||['p1'];
+  const byDept={};
+  hcRows.filter(r=>r.active&&incl.includes(r.phase)).forEach(r=>{
+    if(!byDept[r.dept])byDept[r.dept]=0;
+    const oc=r.type==='employee'?Math.round(r.salary*ONCOST):0;
+    byDept[r.dept]+=r.salary+oc;
+  });
+  const total=Object.values(byDept).reduce((s,v)=>s+v,0);
+  el.innerHTML=`${Object.entries(byDept).map(([d,v])=>`
+    <div class="kv">
+      <div class="kk" style="display:flex;align-items:center;gap:6px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${deptColors[d]||'#8B90AA'};flex-shrink:0;display:inline-block;"></span>${d}
+      </div>
+      <div class="kv2">${fmtM(v/12)}/mo</div>
+    </div>`).join('')}
+    <div class="div"></div>
+    <div class="kv"><div class="kk" style="font-weight:600;color:var(--text);">Total monthly</div><div class="kv2 sr">${fmtM(total/12)}/mo</div></div>`;
+}
+
+// ═══ RENDER MONTH TABLE ═══
+function renderMonthTable(ph,rows,isP0){
+  const tbody=document.getElementById(ph+'-tbody');
+  if(!tbody)return;
+  tbody.innerHTML=rows.map(r=>{
+    const bc=r.bal<0?'neg':r.bal<20000?'wrn':'pos';
+    const nc=r.net<0?'neg':'pos';
+    const boostLabel=r.boosted?' +20%':'';
+    const collNote=r.launchNames?`<span class="badge bb" style="font-size:9px;">${r.launchNames.join(', ')}${boostLabel}</span>`:'';
+    const prodNote=r.collProd>0&&!r.launchNames?`<span class="badge ba" style="font-size:9px;">Prod. ${fmtM(r.collProd)}</span>`:'';
+    const ordersNote=r.orders>0?`<span style="font-size:10px;color:var(--dim);margin-left:4px;">${r.orders.toLocaleString()} orders</span>`:'';
+    if(isP0){
+      const stage=r.pre?'Pre-launch':(r.launchNames?'🚀 Launch':'Live');
+      return `<tr class="${r.launchNames?'coll-row':r.collProd&&!r.launchNames?'prod-row':''}">
+        <td class="pri">M${r.m}</td><td>${stage}</td>
+        <td>${collNote}${prodNote}${ordersNote}</td>
+        <td class="neg num">(${fmtF(r.costsOut)})</td>
+        <td class="${r.revIn>0?'pos':'num'} num">${r.revIn>0?fmtF(r.revIn):'—'}</td>
+        <td class="${nc} num">${r.net>=0?fmtF(r.net):'('+fmtF(r.net)+')'}</td>
+        <td class="${bc} num">${r.bal>=0?fmtF(r.bal):'('+fmtF(r.bal)+')'}</td>
+      </tr>`;
+    } else {
+      return `<tr class="${r.launchNames?'coll-row':r.collProd?'prod-row':''}">
+        <td class="pri">M${r.m}</td>
+        <td>${collNote}${r.collProd&&!r.launchNames?`<span class="badge ba" style="font-size:9px;">Prod. ${fmtM(r.collProd)}</span>`:''}${ordersNote}</td>
+        <td class="neg num">(${fmtF(r.opex+r.storageMo)})</td>
+        <td class="neg num">${r.hcMo>0?'('+fmtF(r.hcMo)+')':'—'}</td>
+        <td class="${r.revIn>0?'pos':'num'} num">${r.revIn>0?fmtF(r.revIn):'—'}</td>
+        <td class="${nc} num">${r.net>=0?fmtF(r.net):'('+fmtF(r.net)+')'}</td>
+        <td class="${bc} num">${r.bal>=0?fmtF(r.bal):'('+fmtF(r.bal)+')'}</td>
+      </tr>`;
+    }
+  }).join('');
+}
+
+// ═══ CASH CHART ═══
+function renderCashChart(ph,rows,chartStore){
+  if(chartStore[ph])chartStore[ph].destroy();
+  const ctx=document.getElementById(ph+'-chart');
+  if(!ctx)return;
+  chartStore[ph]=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:rows.map(r=>'M'+r.m),
+      datasets:[
+        {type:'line',label:'Cash',data:rows.map(r=>r.bal),borderColor:rows.map(r=>r.bal<0?'#f87171':'#4ade80'),borderWidth:2,pointBackgroundColor:rows.map(r=>r.bal<0?'#f87171':'#4ade80'),pointRadius:4,tension:0.3,fill:false},
+        {label:'Costs',data:rows.map(r=>-r.costsOut),backgroundColor:'rgba(248,113,113,0.2)',borderWidth:0},
+        {label:'Revenue',data:rows.map(r=>r.revIn),backgroundColor:'rgba(74,222,128,0.2)',borderWidth:0}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{autoSkip:false}},y:{ticks:{callback:v=>fmtM(v)}}}}
+  });
+}
+
+// ═══ FUNDING CALCULATOR ═══
+let fChartInst=null;
+function fRecalc(){
+  const cash=+document.getElementById('f-cash').value;
+  const burn=+document.getElementById('f-burn').value;
+  const rev=+document.getElementById('f-rev').value;
+  const targetRw=+document.getElementById('f-runway').value;
+  const bufPct=+document.getElementById('f-buffer').value/100;
+  const burnGrowth=+document.getElementById('f-burn-growth').value/100;
+  document.getElementById('fv-cash').textContent=fmtM(cash);
+  document.getElementById('fv-burn').textContent=fmtM(burn);
+  document.getElementById('fv-rev').textContent=fmtM(rev);
+  document.getElementById('fv-runway').textContent=targetRw+' mo';
+  document.getElementById('fv-buffer').textContent=document.getElementById('f-buffer').value+'%';
+  document.getElementById('fv-bg').textContent=document.getElementById('f-burn-growth').value+'%/mo';
+  const netBurn=burn-rev;
+  const currentRw=netBurn>0?Math.floor(cash/netBurn):99;
+  document.getElementById('f-st-current').textContent=currentRw>60?'60+ mo':currentRw+' mo';
+  // compute total cost for target runway with burn growth
+  let totalNeeded=0;
+  let b=netBurn;
+  for(let m=0;m<targetRw;m++){totalNeeded+=Math.max(0,b);b*=(1+burnGrowth);}
+  const minRaise=Math.max(0,totalNeeded-cash);
+  const recRaise=Math.ceil(minRaise*(1+bufPct)/50000)*50000;
+  document.getElementById('f-st-min').textContent=fmtM(Math.ceil(minRaise/50000)*50000);
+  document.getElementById('f-st-rec').textContent=fmtM(recRaise);
+  // scenarios
+  const scenarios=[
+    {label:'Survival',amount:Math.ceil(minRaise/50000)*50000,note:'Covers target runway, no buffer.',badge:'br'},
+    {label:'Sensible',amount:recRaise,note:`Includes ${document.getElementById('f-buffer').value}% contingency buffer.`,badge:'ba'},
+    {label:'Confident',amount:Math.ceil(recRaise*1.5/50000)*50000,note:'1.5× the sensible raise. Strong negotiating position.',badge:'bg'}
+  ];
+  document.getElementById('f-scenarios').innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">${scenarios.map(s=>`
+    <div style="background:var(--surface2);border:1px solid var(--border-med);border-radius:var(--radius);padding:14px;text-align:center;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">${s.label}</div>
+      <div style="font-size:20px;font-weight:700;color:var(--blanc);">${fmtM(s.amount)}</div>
+      <div style="margin-top:6px;"><span class="badge ${s.badge}">${targetRw} mo runway</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">${s.note}</div>
+    </div>`).join('')}</div>`;
+  // chart
+  const months=Array.from({length:targetRw},(_, i)=>i+1);
+  let cumBurn=0,b2=netBurn;
+  const burnArr=months.map(()=>{const v=Math.max(0,b2);cumBurn+=v;b2*=(1+burnGrowth);return v;});
+  if(fChartInst)fChartInst.destroy();
+  fChartInst=new Chart(document.getElementById('f-chart'),{
+    type:'line',
+    data:{labels:months.map(m=>'M'+m),datasets:[
+      {label:'Monthly net burn',data:burnArr,borderColor:'#f87171',borderWidth:2,fill:true,backgroundColor:'rgba(248,113,113,0.1)',tension:0.3,pointRadius:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>fmtM(v)}}}}
+  });
+}
+
+// ═══ HIRING TABLE ═══
+const phaseOrder=['p1','p2','p3'];
+const phaseC={'p1':'rgba(96,165,250,0.12)','p2':'rgba(251,191,36,0.12)','p3':'rgba(74,222,128,0.12)'};
+const phaseTxt={'p1':'#60a5fa','p2':'#fbbf24','p3':'#4ade80'};
+const phaseN={'p1':'Phase 1','p2':'Phase 2','p3':'Phase 3'};
+const typeC={employee:'rgba(255,255,252,0.06)',outsourced:'rgba(251,191,36,0.1)',freelance:'rgba(96,165,250,0.1)'};
+const typeTxt={employee:'rgba(255,255,252,0.7)',outsourced:'#fbbf24',freelance:'#60a5fa'};
+const typeN={employee:'Employee',outsourced:'Outsourced',freelance:'Freelance'};
+const depts=Object.keys(deptColors).concat(['Legal & Finance']);
+let hcChartInst=null;
+
+function cyclePhaseHC(id){const r=hcRows.find(r=>r.id===id);if(!r)return;const i=phaseOrder.indexOf(r.phase);r.phase=phaseOrder[(i+1)%phaseOrder.length];renderHiring();flagUnsaved();}
+function cycleTypeHC(id){const r=hcRows.find(r=>r.id===id);if(!r)return;const t=['employee','outsourced','freelance'];const i=t.indexOf(r.type);r.type=t[(i+1)%t.length];renderHiring();flagUnsaved();}
+function updateHCSalary(id,val){const r=hcRows.find(r=>r.id===id);if(r){r.salary=Math.max(0,parseInt(val)||0);renderHiring();flagUnsaved();}}
+function toggleHireHC(id,v){const r=hcRows.find(r=>r.id===id);if(r){r.active=v;renderHiring();flagUnsaved();}}
+function deleteHireHC(id){const i=hcRows.findIndex(r=>r.id===id);if(i!==-1){hcRows.splice(i,1);renderHiring();flagUnsaved();}}
+function addHireRow(){
+  hcRows.push({id:hcNextId++,role:'New Role',dept:'Operations',phase:'p1',salary:35000,active:true,type:'employee'});
+  renderHiring();flagUnsaved();
+}
+
+function renderHiring(){
+  const tbody=document.getElementById('hc-tbody');
+  if(!tbody)return;
+  tbody.innerHTML=hcRows.map(r=>{
+    const oc=r.type==='employee'?Math.round(r.salary*ONCOST):0;
+    const total=r.salary+oc;
+    const dim=r.active?'':'style="opacity:0.3;"';
+    const dc=deptColors[r.dept]||'#8B90AA';
+    return `<tr ${dim}>
+      <td><input type="checkbox" ${r.active?'checked':''} onchange="toggleHireHC(${r.id},this.checked)" style="width:13px;height:13px;cursor:pointer;accent-color:var(--blanc);"></td>
+      <td class="${r.active?'pri':''}" style="min-width:160px;">${r.role}</td>
+      <td><span style="color:${dc};font-size:11px;">${r.dept}</span></td>
+      <td><button onclick="cyclePhaseHC(${r.id})" ${r.active?'':'disabled'} style="background:${phaseC[r.phase]};color:${phaseTxt[r.phase]};border:none;border-radius:8px;padding:3px 9px;font-size:11px;font-weight:500;font-family:var(--font);cursor:pointer;">${phaseN[r.phase]}</button></td>
+      <td><button onclick="cycleTypeHC(${r.id})" ${r.active?'':'disabled'} style="background:${typeC[r.type]};color:${typeTxt[r.type]};border:none;border-radius:8px;padding:3px 9px;font-size:11px;font-weight:500;font-family:var(--font);cursor:pointer;">${typeN[r.type]}</button></td>
+      <td class="num"><input type="number" class="num-inp sm" value="${r.salary}" min="0" step="1000" onchange="updateHCSalary(${r.id},this.value)" ${r.active?'':'disabled'}></td>
+      <td class="num">${oc>0?'£'+oc.toLocaleString():'—'}</td>
+      <td class="num">£${total.toLocaleString()}</td>
+      <td><button onclick="deleteHireHC(${r.id})" style="background:none;border:none;color:rgba(248,113,113,0.4);font-size:16px;cursor:pointer;padding:0;line-height:1;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='rgba(248,113,113,0.4)'">×</button></td>
+    </tr>`;
+  }).join('');
+  // summary stats
+  const p1c=hcCostPerPhase('p1'),p2c=hcCostPerPhase('p2'),p3c=hcCostPerPhase('p3');
+  const p1n=hcRows.filter(r=>r.active&&r.phase==='p1').length;
+  const p2n=hcRows.filter(r=>r.active&&['p1','p2'].includes(r.phase)).length;
+  const p3n=hcRows.filter(r=>r.active).length;
+  document.getElementById('hc-p1-cost').textContent=fmtM(p1c);
+  document.getElementById('hc-p1-n').textContent=p1n+' active roles';
+  document.getElementById('hc-p2-cost').textContent=fmtM(p2c);
+  document.getElementById('hc-p2-n').textContent=p2n+' active roles';
+  document.getElementById('hc-p3-cost').textContent=fmtM(p3c);
+  document.getElementById('hc-p3-n').textContent=p3n+' active roles';
+  // dept summary
+  const byDept={};
+  hcRows.filter(r=>r.active).forEach(r=>{
+    if(!byDept[r.dept])byDept[r.dept]={p1:0,p2:0,p3:0};
+    const oc=r.type==='employee'?Math.round(r.salary*ONCOST):0;
+    const cost=r.salary+oc;
+    if(r.phase==='p1')byDept[r.dept].p1+=cost;
+    else if(r.phase==='p2')byDept[r.dept].p2+=cost;
+    else byDept[r.dept].p3+=cost;
+  });
+  document.getElementById('hc-dept-summary').innerHTML=`
+    <table class="dt" style="font-size:11.5px;">
+      <thead><tr><th>Department</th><th class="num">P1 cost</th><th class="num">P2 added</th><th class="num">P3 added</th></tr></thead>
+      <tbody>${Object.entries(byDept).map(([d,v])=>`
+        <tr><td><span style="color:${deptColors[d]||'#8B90AA'};font-size:11px;">${d}</span></td>
+        <td class="num">${v.p1>0?fmtM(v.p1):'—'}</td>
+        <td class="num">${v.p2>0?fmtM(v.p2):'—'}</td>
+        <td class="num">${v.p3>0?fmtM(v.p3):'—'}</td></tr>`).join('')}
+      </tbody>
+    </table>`;
+  // chart
+  if(hcChartInst)hcChartInst.destroy();
+  hcChartInst=new Chart(document.getElementById('hc-chart'),{
+    type:'bar',
+    data:{labels:['Phase 1','Phase 2','Phase 3'],datasets:[
+      {label:'Salary',data:[hcRows.filter(r=>r.active&&r.phase==='p1').reduce((s,r)=>s+r.salary,0),hcRows.filter(r=>r.active&&['p1','p2'].includes(r.phase)).reduce((s,r)=>s+r.salary,0),hcRows.filter(r=>r.active).reduce((s,r)=>s+r.salary,0)],backgroundColor:'rgba(255,255,252,0.15)',borderWidth:0},
+      {label:'On-costs',data:[p1c-hcRows.filter(r=>r.active&&r.phase==='p1').reduce((s,r)=>s+r.salary,0),p2c-hcRows.filter(r=>r.active&&['p1','p2'].includes(r.phase)).reduce((s,r)=>s+r.salary,0),p3c-hcRows.filter(r=>r.active).reduce((s,r)=>s+r.salary,0)],backgroundColor:'rgba(96,165,250,0.25)',borderWidth:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmtM(v)}}}}
+  });
+  // update all phase HC summaries
+  ['p1','p2','p3'].forEach(renderHCSummary);
+}
+
+// ═══ INIT ═══
+function recalcAll(){
+  p0Recalc();p1Recalc();p2Recalc();p3Recalc();fRecalc();
+  document.getElementById('unsaved').style.display='none';
+}
+
+function init(){
+  // Build opex forms first so their DOM elements exist before recalc reads them
+  ['p0','p1','p2','p3'].forEach(ph=>{
+    const el=document.getElementById(ph+'-opex-form');
+    if(el)el.innerHTML=buildOpexForm(ph);
+    renderCollections(ph);
+  });
+  recalcAll();
+  renderHiring();
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+}else{
+  init();
+}
+</script>
+</body>
+</html>
